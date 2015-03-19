@@ -1,0 +1,157 @@
+<html>
+<head>
+	<title> The Dragon Curve </title>
+</head>
+
+<script>
+
+var points = [ {x:200, y:500},
+			   {x:800, y:500}
+];
+
+function middlePoint(a, b, up){
+
+	var dx = a.x - b.x;
+	var dy = a.y - b.y;
+	var c = {x:(a.x +b.x) / 2, y:(a.y +b.y) / 2};
+	var m = {x:-dy / 2, y:dx / 2};
+
+	if (!up){
+		m.x *= -1;
+		m.y *= -1;
+	}
+
+	var res = {x: m.x + c.x, y: m.y + c.y};
+
+	return res;
+
+}
+
+function drawPath(degree){
+	var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");
+
+	ctx.clearRect ( 0 , 0 , c.width, c.height );
+
+	ctx.beginPath();
+	ctx.moveTo(points[0].x, points[0].y);
+
+	var tempSegmentsCenter = [];
+
+	for (var i = 1; i < points.length; i++) {
+
+		var p = points[i];
+		if (i % 2 == 1 && segmentCenters.length > 0){
+			var c = segmentCenters[(i-1)/2];
+			var d_1 = 1.0 - degree;
+			p = {x:p.x * degree + c.x * d_1, y:p.y * degree + c.y * d_1}
+
+			tempSegmentsCenter.push(p);
+		}
+		ctx.lineTo(p.x, p.y);
+	};
+	ctx.stroke();
+
+	if (degree != 1){
+		ctx.fillStyle="#FF0000";
+		for (var i = 0; i < tempSegmentsCenter.length; i++) {
+			ctx.fillRect(tempSegmentsCenter[i].x - 2, tempSegmentsCenter[i].y - 2,4,4);
+		}
+	}
+}
+
+var segmentCenters = [];
+
+function iterateDragon(){
+	segmentCenters = [];
+	var points2 = [];
+	var up = true;
+
+	var cs = 0;
+	for (var i = 0; i < points.length-1; i++) {
+		var a = points[i];
+		var b = points[i+1];
+		var m = middlePoint(a,b, up);
+
+		up = !up;
+
+		points2.push(a);
+		points2.push(m);
+
+		segmentCenters[cs] = {x:(a.x + b.x) / 2, y:(a.y+b.y)/2};
+		cs++;
+	};
+
+	points2.push(points[points.length-1]);
+
+	points = points2;
+}
+
+var maxIterations = 18;
+var iteration = 0;
+var animationStart = 0;
+var animationRequestID;
+function iterateAndDraw(){
+
+	function animate() {
+		var now = window.performance.now();
+		var lapse = now - animationStart;
+		if (lapse >= 1000){
+			drawPath(1.0);
+			drawNInteration(iteration);
+			window.cancelAnimationFrame(animationRequestID);
+		} else{
+			drawPath(lapse / 1000);
+  			animationRequestID = window.requestAnimationFrame(animate);
+  		}
+	}
+
+	animationStart = window.performance.now();
+	animate();
+
+	drawPath(1);
+	iteration++;
+	if (iteration == maxIterations){
+		window.clearInterval(intervalID);
+	}
+
+	iterateDragon();
+}
+
+function drawNInteration(n){
+	var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");
+
+	ctx.font="100px Calibri";
+	ctx.fillText(n,c.width - 200,100);
+
+	if (n == maxIterations){
+		ctx.fillStyle="#000000";
+		ctx.font="40px Calibri";
+		ctx.fillText("The Dragon Curve",c.width - 350,170);
+	}
+}
+
+var intervalID;
+window.onload = function(){
+	var c=document.getElementById("myCanvas");
+	c.width = window.innerWidth;
+	c.height = window.innerHeight;
+
+	points = [ {x:c.width*0.25, y:500},
+			   {x:c.width*0.75, y:500}
+	];
+
+	drawPath(1);
+	intervalID = window.setInterval(iterateAndDraw, 3000);
+}
+
+</script>
+
+<body style="height: 100%; margin: 0;">
+
+<canvas id="myCanvas" width="1000" height="1000">
+</canvas>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<html>
+<head>
+</head>
+
+<script>
+
+var points = [ {x:200, y:500},
+			   {x:800, y:500}
+];
+
+function middlePoint(a, b, up){
+
+	var dx = a.x - b.x;
+	var dy = a.y - b.y;
+	var c = {x:(a.x +b.x) / 2, y:(a.y +b.y) / 2};
+	var m = {x:-dy / 2, y:dx / 2};
+
+	if (!up){
+		m.x *= -1;
+		m.y *= -1;
+	}
+
+	var res = {x: m.x + c.x, y: m.y + c.y};
+
+	return res;
+
+}
+
+function drawPath(){
+	var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");
+
+	ctx.clearRect ( 0 , 0 , c.width, c.height );
+
+	ctx.beginPath();
+	ctx.moveTo(points[0].x, points[0].y);
+	for (var i = 1; i < points.length; i++) {
+		ctx.lineTo(points[i].x, points[i].y);
+	};
+	ctx.stroke();
+}
+
+function iterateDragon(){
+	var points2 = [];
+	var up = true;
+	for (var i = 0; i < points.length-1; i++) {
+		var a = points[i];
+		var b = points[i+1];
+		var m = middlePoint(a,b, up);
+
+		up = !up;
+
+		points2.push(a);
+		points2.push(m);
+	};
+
+	points2.push(points[points.length-1]);
+
+	points = points2;
+}
+
+
+var iteration = 0;
+function iterateAndDraw(){
+
+	iteration++;
+	if (iteration == 18){
+		window.clearInterval(intervalID);
+	}
+
+	iterateDragon();
+	drawPath();
+}
+
+var intervalID;
+window.onload = function(){
+
+	drawPath();
+	intervalID = window.setInterval(iterateAndDraw, 2000);
+}
+
+</script>
+
+<body>
+
+<canvas id="myCanvas" width="1000" height="1000" style="border:1px solid #000000;">
+</canvas>
+
+</body>
+</html>
