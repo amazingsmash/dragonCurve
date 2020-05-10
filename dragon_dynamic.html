@@ -9,6 +9,32 @@ var points = [ {x:200, y:500},
 			   {x:800, y:500}
 ];
 
+function getDragonPoint(ratio){
+
+	var r = ratio * points.length;
+	var fr = Math.floor(r);
+	if (fr == r){
+		return points[fr];
+	}
+	var p0 = points[fr];
+	var p1 = points[fr+1];
+
+	//var segLength = 1 / points.length;
+	var segR = (r - fr);
+
+	var p = lerp(p0, p1, segR);
+
+	return p;
+}
+
+function lerp(p0, p1, r){
+	var r1 = (1-r);
+	return {x: p0.x * r1 + p1.x * r,
+			y: p0.y * r1 + p1.y * r};
+}
+
+var bendFactor = 1;
+var latDisp = 0.1;
 function middlePoint(a, b, up){
 
 	var dx = a.x - b.x;
@@ -20,14 +46,21 @@ function middlePoint(a, b, up){
 		m.x *= -1;
 		m.y *= -1;
 	}
+	m.x *= bendFactor;
+	m.y *= bendFactor;
 
 	var res = {x: m.x + c.x, y: m.y + c.y};
+
+	if (latDisp != 0){
+		res.x -= latDisp * dx;
+		res.y -= latDisp * dy;  
+	}
 
 	return res;
 
 }
 
-function drawPath(degree){
+function drawPath(degree, stillDegree=0){
 	var c=document.getElementById("myCanvas");
 	var ctx=c.getContext("2d");
 
@@ -38,13 +71,15 @@ function drawPath(degree){
 
 	var tempSegmentsCenter = [];
 
+	var d_1 = 1.0 - degree;
 	for (var i = 1; i < points.length; i++) {
 
 		var p = points[i];
 		if (i % 2 == 1 && segmentCenters.length > 0){
 			var c = segmentCenters[(i-1)/2];
-			var d_1 = 1.0 - degree;
-			p = {x:p.x * degree + c.x * d_1, y:p.y * degree + c.y * d_1}
+
+			p = {x:p.x * degree + c.x * d_1, 
+				 y:p.y * degree + c.y * d_1}
 
 			tempSegmentsCenter.push(p);
 		}
@@ -57,6 +92,10 @@ function drawPath(degree){
 		for (var i = 0; i < tempSegmentsCenter.length; i++) {
 			ctx.fillRect(tempSegmentsCenter[i].x - 2, tempSegmentsCenter[i].y - 2,4,4);
 		}
+	}else{
+		ctx.fillStyle="#0000FF";
+		c = getDragonPoint(stillDegree);
+		ctx.fillRect(c.x - 4, c.y - 4,8,8);
 	}
 }
 
@@ -90,32 +129,41 @@ function iterateDragon(){
 var maxIterations = 18;
 var iteration = 0;
 var animationStart = 0;
-var animationRequestID;
+var animationRequestID = -1;
+var stepAnimationDurationMs = 1000;
+var stepStillDurationMs = 2000;
 function iterateAndDraw(){
 
 	function animate() {
 		var now = window.performance.now();
 		var lapse = now - animationStart;
-		if (lapse >= 1000){
-			drawPath(1.0);
+		if (lapse >= stepAnimationDurationMs){
+			var stillDegree = (lapse - stepAnimationDurationMs) / stepStillDurationMs;
+
+			drawPath(1.0, stillDegree);
 			drawNInteration(iteration);
-			window.cancelAnimationFrame(animationRequestID);
+			if (stillDegree < 1){
+				animationRequestID = window.requestAnimationFrame(animate);
+			}else{
+				window.cancelAnimationFrame(animationRequestID);
+			}
 		} else{
-			drawPath(lapse / 1000);
+			drawPath(lapse / stepAnimationDurationMs);
   			animationRequestID = window.requestAnimationFrame(animate);
   		}
 	}
 
+	iterateDragon();
 	animationStart = window.performance.now();
 	animate();
 
 	drawPath(1);
 	iteration++;
 	if (iteration == maxIterations){
+		drawNInteration(iteration);
 		window.clearInterval(intervalID);
 	}
 
-	iterateDragon();
 }
 
 function drawNInteration(n){
@@ -132,26 +180,62 @@ function drawNInteration(n){
 	}
 }
 
-var intervalID;
-window.onload = function(){
+var intervalID = -1;
+function start(){
+
+	if (intervalID != -1){
+		window.clearInterval(intervalID);
+		intervalID = -1;
+	}
+	if (animationRequestID  != -1){
+		window.cancelAnimationFrame(animationRequestID);
+	}
+
+	stepAnimationDurationMs = parseInt(document.getElementById("speedRange").value);
+	stepStillDurationMs = parseInt(document.getElementById("stepDurationRange").value);
+	bendFactor = parseFloat(document.getElementById("bendFactorRange").value);
+	latDisp = parseFloat(document.getElementById("latDispRange").value);
+	iteration = 0;
+
 	var c=document.getElementById("myCanvas");
 	c.width = window.innerWidth;
 	c.height = window.innerHeight;
 
-	points = [ {x:c.width*0.25, y:500},
-			   {x:c.width*0.75, y:500}
+	points = [ {x:c.width*0.25, y:c.height * 0.65},
+			   {x:c.width*0.75, y:c.height * 0.65}
 	];
 
 	drawPath(1);
-	intervalID = window.setInterval(iterateAndDraw, 3000);
+	intervalID = window.setInterval(iterateAndDraw, 
+		stepAnimationDurationMs + stepStillDurationMs);
 }
+
+window.onload = start;
 
 </script>
 
 <body style="height: 100%; margin: 0;">
+	<div style="margin: 20px; position: absolute; z-index: 10; font-family: courier">
+			Transition Time: 
+			<input id="speedRange" type="range" 
+			min="100" max="2000" value="1000" step="any" onchange="start()"
+			style="position: absolute; left: 160px;">
+			<p></p>
+			Traversal Time: <input id="stepDurationRange" type="range" min="500" max="6000" value="1000" step="any" onchange="start()" style="position: absolute;left: 160px;">
+			<p></p>
+			Bend Factor: <input id="bendFactorRange" type="range" 
+			min="0.1" max="1" value="1" step="any" 
+			onchange="start()" style="position: absolute;left: 160px;">
+			<p></p>
+			Lateral Offset: <input id="latDispRange" type="range" 
+			min="-0.25" max="0.25" value="0" step="any" 
+			onchange="start()" style="position: absolute;left: 160px;">
+	</div>
+	<canvas id="myCanvas" width="100%" height="100%">
+		
 
-<canvas id="myCanvas" width="1000" height="1000">
-</canvas>
+	</canvas>
+	
 
 </body>
 </html>
