@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dragon Curve Vue</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #viewer { flex: 1; }
+        #controls { padding: 10px; background: #eee; display: flex; align-items: center; }
+        #slider { flex: 1; margin: 0 10px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <canvas id="viewer"></canvas>
+    <div id="controls">
+        <button @click="togglePlay">{{ playing ? 'Pause' : 'Play' }}</button>
+        <input id="slider" type="range" min="0" max="100" v-model.number="progress" @input="draw" />
+        <span>{{ Math.floor(progress) }}%</span>
+    </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
