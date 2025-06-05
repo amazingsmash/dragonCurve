@@ -33,7 +33,8 @@ function computeDragon(iterations) {
 createApp({
     data() {
         return {
-            progress: 0,
+            // start fully drawn so the fractal is visible immediately
+            progress: 100,
             playing: false,
             intervalId: null,
             points: [],
