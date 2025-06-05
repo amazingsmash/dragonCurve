@@ -58,9 +58,9 @@ createApp({
             const ctx = this.ctx;
             if (!ctx) return;
             const canvas = ctx.canvas;
-            ctx.fillStyle = 'blue';
+            ctx.fillStyle = '#111';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = 'red';
+            ctx.strokeStyle = '#40c4ff';
             ctx.lineWidth = 2;
             const count = Math.floor(this.points.length * (this.progress / 100));
             if (count < 2) return;
